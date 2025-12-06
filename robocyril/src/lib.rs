@@ -206,6 +206,48 @@ pub fn list_posts(conn: &Connection, include_drafts: bool) -> Result<Vec<PostSum
     Ok(posts)
 }
 
+pub fn list_posts_full(conn: &Connection, limit: Option<usize>) -> Result<Vec<Post>> {
+    let sql = "SELECT id, slug, title, content, repo, created_at, published_at, tags, commit_range
+               FROM posts WHERE published_at IS NOT NULL ORDER BY published_at DESC";
+
+    let mut stmt = conn.prepare(sql)?;
+    let mut rows = stmt.query([])?;
+    let mut posts = Vec::new();
+
+    while let Some(row) = rows.next()? {
+        if let Some(max) = limit {
+            if posts.len() >= max {
+                break;
+            }
+        }
+
+        let tags_str: String = row.get(7)?;
+        let tags: Vec<String> = serde_json::from_str(&tags_str).unwrap_or_default();
+        let created_str: String = row.get(5)?;
+        let published_str: Option<String> = row.get(6)?;
+
+        posts.push(Post {
+            id: Some(row.get(0)?),
+            slug: row.get(1)?,
+            title: row.get(2)?,
+            content: row.get(3)?,
+            repo: row.get(4)?,
+            created_at: DateTime::parse_from_rfc3339(&created_str)
+                .unwrap()
+                .with_timezone(&Utc),
+            published_at: published_str.map(|s| {
+                DateTime::parse_from_rfc3339(&s)
+                    .unwrap()
+                    .with_timezone(&Utc)
+            }),
+            tags,
+            commit_range: row.get(8)?,
+        });
+    }
+
+    Ok(posts)
+}
+
 // Authentication
 pub fn api_key_path() -> String {
     std::env::var("BLOG_API_KEY_PATH").unwrap_or_else(|_| "/etc/robocyril-api-key".to_string())
