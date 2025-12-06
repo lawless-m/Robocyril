@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = 'https://steponnopets.net/cyril/api';
 
 export async function getPosts() {
   const res = await fetch(`${API_BASE}/posts`);
