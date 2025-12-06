@@ -2,7 +2,9 @@ use chrono::{DateTime, Utc};
 use rusqlite::{Connection, Result};
 use serde::{Deserialize, Serialize};
 
-pub const DB_PATH: &str = "/var/lib/robocyril/blog.db";
+pub fn db_path() -> String {
+    std::env::var("BLOG_DB_PATH").unwrap_or_else(|_| "/var/lib/robocyril/blog.db".to_string())
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Post {
@@ -38,7 +40,7 @@ pub struct PostSummary {
 }
 
 pub fn open_db() -> Result<Connection> {
-    Connection::open(DB_PATH)
+    Connection::open(db_path())
 }
 
 pub fn init_db(conn: &Connection) -> Result<()> {
@@ -205,10 +207,12 @@ pub fn list_posts(conn: &Connection, include_drafts: bool) -> Result<Vec<PostSum
 }
 
 // Authentication
-const API_KEY_PATH: &str = "/etc/robocyril-api-key";
+pub fn api_key_path() -> String {
+    std::env::var("BLOG_API_KEY_PATH").unwrap_or_else(|_| "/etc/robocyril-api-key".to_string())
+}
 
 pub fn check_auth() -> bool {
-    let expected = match std::fs::read_to_string(API_KEY_PATH) {
+    let expected = match std::fs::read_to_string(api_key_path()) {
         Ok(key) => key.trim().to_string(),
         Err(_) => return false,
     };
