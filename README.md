@@ -141,14 +141,23 @@ Example:
 ## Claude Code Skills
 
 This repo includes reusable skills for:
-- **BrowserBridge** - Real-time browser debugging
-- **CSharpener** - C# static analysis
-- **Databases** - RDBMS patterns
-- **Elasticsearch** - ES 5.2 operations
-- **Image Files** - ImageMagick operations
-- **JSharpener** - JS/TS static analysis
-- **Rust** - Rust development patterns
-- And more...
+- **Boofuzz-Fuzzer** - Protocol fuzzer script development
+- **BrowserBridge** - Real-time browser debugging via WebSocket
+- **CSharpener** - C# static analysis for call graphs and unused code
+- **Creating Skills** - Guide for creating Claude Code skill documents
+- **Databases** - RDBMS patterns for DuckDB, MySQL, PostgreSQL, SQL Server, DBISAM
+- **Dotnet 8 to 9** - .NET migration guide
+- **Elasticsearch** - ES 5.2 operations - search, bulk, scroll, aliases
+- **Email** - Email handling patterns
+- **Image Files** - ImageMagick command-line operations
+- **JSharpener** - JavaScript/TypeScript static analysis
+- **Logging** - UTF-8 file logging with date-based filenames
+- **Parquet Files** - Creating Parquet files in C#
+- **PythonJson** - UTF-8 JSON file I/O utilities
+- **Roo-VMS** - Alpine and Debian QEMU VMs for protocol testing
+- **Rust** - Rust development patterns and project setup
+- **SharePoint** - SharePoint integration
+- **Web Frontend** - React + Tailwind + shadcn/ui artifacts
 
 See `.claude/skills/` for all available skills.
 
