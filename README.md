@@ -138,6 +138,22 @@ Example:
 /blog AI PR spam and fuzzing for real bugs
 ```
 
+## RSS Feed
+
+The blog includes an RSS 2.0 feed at `/api/rss` for subscribing to updates.
+
+Features:
+- Standard RSS 2.0 format
+- Includes all published posts
+- Contains full post content in markdown
+- Proper dates and metadata
+
+## DevBlog
+
+In addition to the public blog, there's a `/devblog` variant for internal development notes. Same architecture, different audience - less polished, more technical detail.
+
+See `devblog-frontend/` for the internal blog frontend.
+
 ## Philosophy
 
 This is not a dev diary. Posts should:
