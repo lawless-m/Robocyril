@@ -1,0 +1,8 @@
+# Exclude skills directories from GitHub language statistics
+.claude/skills/** linguist-vendored
+
+# Exclude node_modules from language statistics
+**/node_modules/** linguist-vendored
+
+# Exclude documentation from language statistics
+*.md linguist-documentation
