@@ -96,7 +96,8 @@ pub fn init_db(conn: &Connection) -> Result<()> {
 pub fn insert_post(conn: &Connection, post: &NewPost) -> Result<i64> {
     let slug = slug::slugify(&post.title);
     let now = Utc::now();
-    let published_at = if post.publish.unwrap_or(false) {
+    let is_published = post.publish.unwrap_or(false);
+    let published_at = if is_published {
         Some(now)
     } else {
         None
@@ -117,6 +118,11 @@ pub fn insert_post(conn: &Connection, post: &NewPost) -> Result<i64> {
             &post.commit_range,
         ),
     )?;
+
+    // Sync project if post is published and has a project tag
+    if is_published {
+        let _ = sync_project_from_post(conn, post);
+    }
 
     Ok(conn.last_insert_rowid())
 }
@@ -177,7 +183,8 @@ pub fn update_post(conn: &Connection, slug: &str, update: &UpdatePost) -> Result
         sets.push("content = ?");
         params.push(Box::new(content.clone()));
     }
-    if update.publish == Some(true) {
+    let is_publishing = update.publish == Some(true);
+    if is_publishing {
         sets.push("published_at = ?");
         params.push(Box::new(Utc::now().to_rfc3339()));
     }
@@ -191,6 +198,21 @@ pub fn update_post(conn: &Connection, slug: &str, update: &UpdatePost) -> Result
 
     let param_refs: Vec<&dyn rusqlite::ToSql> = params.iter().map(|p| p.as_ref()).collect();
     let rows = conn.execute(&sql, param_refs.as_slice())?;
+
+    // Sync project when publishing
+    if is_publishing && rows > 0 {
+        if let Ok(Some(post)) = get_post_by_slug(conn, slug) {
+            let new_post = NewPost {
+                title: post.title,
+                content: post.content,
+                repo: post.repo,
+                tags: Some(post.tags),
+                commit_range: post.commit_range,
+                publish: Some(true),
+            };
+            let _ = sync_project_from_post(conn, &new_post);
+        }
+    }
 
     Ok(rows > 0)
 }
@@ -279,6 +301,92 @@ pub fn list_posts_full(conn: &Connection, limit: Option<usize>) -> Result<Vec<Po
 }
 
 // Project functions
+
+/// Extract the first paragraph from markdown content (for project snippets)
+pub fn extract_first_paragraph(content: &str) -> String {
+    // Skip any leading headers or blank lines
+    let lines: Vec<&str> = content.lines().collect();
+    let mut paragraph = String::new();
+    let mut in_paragraph = false;
+
+    for line in lines {
+        let trimmed = line.trim();
+
+        // Skip headers and blank lines at the start
+        if !in_paragraph {
+            if trimmed.is_empty() || trimmed.starts_with('#') {
+                continue;
+            }
+            in_paragraph = true;
+        }
+
+        // End paragraph on blank line or header
+        if in_paragraph && (trimmed.is_empty() || trimmed.starts_with('#')) {
+            break;
+        }
+
+        if !paragraph.is_empty() {
+            paragraph.push(' ');
+        }
+        paragraph.push_str(trimmed);
+    }
+
+    // Truncate to ~200 chars for short description
+    if paragraph.len() > 200 {
+        let truncated: String = paragraph.chars().take(197).collect();
+        format!("{}...", truncated.trim_end())
+    } else {
+        paragraph
+    }
+}
+
+/// Parse a project tag to get (id, name)
+/// "® Robocyril" → ("robocyril", "Robocyril")
+pub fn parse_project_tag(tag: &str) -> Option<(String, String)> {
+    if !tag.starts_with('®') {
+        return None;
+    }
+    let name = tag.trim_start_matches('®').trim();
+    if name.is_empty() {
+        return None;
+    }
+    let id = name.to_lowercase();
+    Some((id, name.to_string()))
+}
+
+/// Sync project from post data - creates or updates project when post has project tag
+pub fn sync_project_from_post(conn: &Connection, post: &NewPost) -> Result<()> {
+    let tags = post.tags.as_ref().map(|t| t.as_slice()).unwrap_or(&[]);
+
+    // Find first project tag
+    let project_info = tags.iter()
+        .filter_map(|tag| parse_project_tag(tag))
+        .next();
+
+    if let Some((id, name)) = project_info {
+        // Need a repo URL to create a project
+        let repo = match &post.repo {
+            Some(r) if !r.is_empty() => r.clone(),
+            _ => return Ok(()), // No repo, skip project creation
+        };
+
+        let short_desc = extract_first_paragraph(&post.content);
+        let description = format!("{}: {}", post.title, short_desc);
+
+        let project = NewProject {
+            id,
+            name,
+            repo,
+            description,
+            short_description: short_desc,
+        };
+
+        insert_project(conn, &project)?;
+    }
+
+    Ok(())
+}
+
 pub fn insert_project(conn: &Connection, project: &NewProject) -> Result<()> {
     let now = Utc::now();
     conn.execute(
