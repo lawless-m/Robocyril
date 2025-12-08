@@ -16,6 +16,7 @@
       <span class="logo-text">Devblog</span>
     </a>
     <nav>
+      <a href="/projects" use:link class="nav-link">Projects</a>
       <button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
         {#if isDark}
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -73,6 +74,26 @@
 
   .logo-icon {
     font-size: 1.4rem;
+  }
+
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .nav-link {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.95rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    transition: background var(--transition), color var(--transition);
+  }
+
+  .nav-link:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
   }
 
   .theme-toggle {

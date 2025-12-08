@@ -1,2 +1,4 @@
 # Rust build artifacts
 robocyril/target/
+team-webhook-url.txt
+.claude/settings.local.json

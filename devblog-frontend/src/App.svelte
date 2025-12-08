@@ -10,6 +10,7 @@
     '/': Home,
     '/post/:slug': Post,
     '/projects': Projects,
+    '/projects/:id': Projects,
     '*': NotFound
   };
 </script>

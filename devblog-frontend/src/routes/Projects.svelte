@@ -3,6 +3,8 @@
   import { getProjects } from '../lib/api.js';
   import Skeleton from '../lib/Skeleton.svelte';
 
+  let { params } = $props();
+
   let projects = $state([]);
   let loading = $state(true);
   let error = $state(null);
@@ -12,6 +14,21 @@
     loadProjects();
   });
 
+  $effect(() => {
+    // Update selectedId when route parameter changes
+    selectedId = params?.id || null;
+
+    // Scroll to the selected project after a brief delay
+    if (selectedId && projects.length > 0) {
+      setTimeout(() => {
+        const element = document.getElementById(selectedId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+  });
+
   async function loadProjects() {
     try {
       projects = await getProjects();
@@ -19,44 +36,15 @@
       error = e.message;
     } finally {
       loading = false;
-      // Handle hash after projects are loaded
-      handleHash();
     }
   }
-
-  function handleHash() {
-    const hash = window.location.hash.slice(1);
-    selectedId = hash || null;
-
-    // Scroll to the selected project after a brief delay
-    if (hash) {
-      setTimeout(() => {
-        const element = document.getElementById(hash);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 100);
-    }
-  }
-
-  $effect(() => {
-    // Listen for hash changes
-    const handleHashChange = () => {
-      selectedId = window.location.hash.slice(1) || null;
-    };
-    window.addEventListener('hashchange', handleHashChange);
-
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-    };
-  });
 </script>
 
 <div class="projects-page">
   <header class="page-header">
     <a href="/" use:link class="back-link">&larr; Back</a>
     <h1>Projects</h1>
-    <p class="tagline">Things I'm building, breaking, and occasionally shipping.</p>
+    <p class="tagline">What we built and how it works.</p>
   </header>
 
   {#if loading}
@@ -89,7 +77,7 @@
           <div class="project-header">
             <span class="project-tag">® {project.name}</span>
             <a href={project.repo} target="_blank" rel="noopener noreferrer" class="repo-link">
-              GitHub &rarr;
+              Repo &rarr;
             </a>
           </div>
           <p class="project-description">

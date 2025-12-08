@@ -9,7 +9,7 @@
 </script>
 
 {#if isProject && projectId}
-  <a href="/projects#{projectId}" use:link class="tag project-tag">
+  <a href="/devblog/#/projects/{projectId}" class="tag project-tag">
     {tag}
   </a>
 {:else}
