@@ -2,6 +2,7 @@
   import { link } from 'svelte-spa-router';
   import { getPosts, formatDate, estimateReadingTime } from '../lib/api.js';
   import Skeleton from '../lib/Skeleton.svelte';
+  import Tag from '../lib/Tag.svelte';
 
   let posts = $state([]);
   let loading = $state(true);
@@ -63,7 +64,7 @@
               <span class="separator">&middot;</span>
               <span class="tags">
                 {#each post.tags.slice(0, 3) as tag}
-                  <span class="tag">{tag}</span>
+                  <Tag {tag} />
                 {/each}
               </span>
             {/if}
@@ -152,14 +153,6 @@
   .tags {
     display: flex;
     gap: 0.375rem;
-  }
-
-  .tag {
-    background: var(--bg-tertiary);
-    padding: 0.125rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
   }
 
   .error, .empty {

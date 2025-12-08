@@ -3,11 +3,13 @@
   import Header from './lib/Header.svelte';
   import Home from './routes/Home.svelte';
   import Post from './routes/Post.svelte';
+  import Projects from './routes/Projects.svelte';
   import NotFound from './routes/NotFound.svelte';
 
   const routes = {
     '/': Home,
     '/post/:slug': Post,
+    '/projects': Projects,
     '*': NotFound
   };
 </script>

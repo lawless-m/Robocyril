@@ -39,6 +39,26 @@ pub struct PostSummary {
     pub tags: Vec<String>,
 }
 
+// Project structs for project tagging
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Project {
+    pub id: String,
+    pub name: String,
+    pub repo: String,
+    pub description: String,
+    pub short_description: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct NewProject {
+    pub id: String,
+    pub name: String,
+    pub repo: String,
+    pub description: String,
+    pub short_description: String,
+}
+
 pub fn open_db() -> Result<Connection> {
     Connection::open(db_path())
 }
@@ -59,6 +79,16 @@ pub fn init_db(conn: &Connection) -> Result<()> {
         );
         CREATE INDEX IF NOT EXISTS idx_posts_published ON posts(published_at);
         CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at);
+
+        CREATE TABLE IF NOT EXISTS projects (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            repo TEXT NOT NULL,
+            description TEXT NOT NULL,
+            short_description TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_projects_created ON projects(created_at);
         ",
     )
 }
@@ -246,6 +276,76 @@ pub fn list_posts_full(conn: &Connection, limit: Option<usize>) -> Result<Vec<Po
     }
 
     Ok(posts)
+}
+
+// Project functions
+pub fn insert_project(conn: &Connection, project: &NewProject) -> Result<()> {
+    let now = Utc::now();
+    conn.execute(
+        "INSERT OR REPLACE INTO projects (id, name, repo, description, short_description, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        (
+            &project.id,
+            &project.name,
+            &project.repo,
+            &project.description,
+            &project.short_description,
+            now.to_rfc3339(),
+        ),
+    )?;
+    Ok(())
+}
+
+pub fn list_projects(conn: &Connection) -> Result<Vec<Project>> {
+    let sql = "SELECT id, name, repo, description, short_description, created_at
+               FROM projects ORDER BY created_at ASC";
+
+    let mut stmt = conn.prepare(sql)?;
+    let mut rows = stmt.query([])?;
+    let mut projects = Vec::new();
+
+    while let Some(row) = rows.next()? {
+        let created_str: String = row.get(5)?;
+
+        projects.push(Project {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            repo: row.get(2)?,
+            description: row.get(3)?,
+            short_description: row.get(4)?,
+            created_at: DateTime::parse_from_rfc3339(&created_str)
+                .unwrap()
+                .with_timezone(&Utc),
+        });
+    }
+
+    Ok(projects)
+}
+
+pub fn get_project_by_id(conn: &Connection, id: &str) -> Result<Option<Project>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, name, repo, description, short_description, created_at
+         FROM projects WHERE id = ?1",
+    )?;
+
+    let mut rows = stmt.query([id])?;
+
+    if let Some(row) = rows.next()? {
+        let created_str: String = row.get(5)?;
+
+        Ok(Some(Project {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            repo: row.get(2)?,
+            description: row.get(3)?,
+            short_description: row.get(4)?,
+            created_at: DateTime::parse_from_rfc3339(&created_str)
+                .unwrap()
+                .with_timezone(&Utc),
+        }))
+    } else {
+        Ok(None)
+    }
 }
 
 // Authentication

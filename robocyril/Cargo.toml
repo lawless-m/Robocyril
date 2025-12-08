@@ -37,3 +37,7 @@ path = "src/delete.rs"
 [[bin]]
 name = "blog-feed"
 path = "src/feed.rs"
+
+[[bin]]
+name = "blog-projects"
+path = "src/projects.rs"
