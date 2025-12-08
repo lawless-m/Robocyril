@@ -30,7 +30,7 @@ scp -r robocyril "$HOST:$BUILD_DIR/"
 
 # Build on vsprod
 echo "Building binaries on vsprod (this may take a few minutes)..."
-ssh "$HOST" "source \$HOME/.cargo/env && cd $BUILD_DIR/robocyril && cargo build --release --bin blog-feed --bin blog-projects"
+ssh "$HOST" "source \$HOME/.cargo/env && cd $BUILD_DIR/robocyril && cargo build --release --bin blog-feed --bin blog-projects --bin blog-post"
 
 if [ $? -ne 0 ]; then
     echo "ERROR: Build failed on vsprod"
@@ -46,8 +46,9 @@ echo ""
 echo "Deploying binaries to $CGI_BIN_DIR..."
 ssh "$HOST" "sudo cp $BUILD_DIR/robocyril/target/release/blog-feed $CGI_BIN_DIR/ && \
              sudo cp $BUILD_DIR/robocyril/target/release/blog-projects $CGI_BIN_DIR/ && \
-             sudo chmod +x $CGI_BIN_DIR/blog-feed $CGI_BIN_DIR/blog-projects && \
-             sudo chown www-data:www-data $CGI_BIN_DIR/blog-feed $CGI_BIN_DIR/blog-projects"
+             sudo cp $BUILD_DIR/robocyril/target/release/blog-post $CGI_BIN_DIR/ && \
+             sudo chmod +x $CGI_BIN_DIR/blog-feed $CGI_BIN_DIR/blog-projects $CGI_BIN_DIR/blog-post && \
+             sudo chown www-data:www-data $CGI_BIN_DIR/blog-feed $CGI_BIN_DIR/blog-projects $CGI_BIN_DIR/blog-post"
 
 echo "✓ Binaries deployed"
 echo ""
@@ -61,5 +62,6 @@ echo "=== Build Complete ==="
 echo "Deployed binaries:"
 echo "  - $CGI_BIN_DIR/blog-feed"
 echo "  - $CGI_BIN_DIR/blog-projects"
+echo "  - $CGI_BIN_DIR/blog-post"
 echo ""
 echo "✓ All done!"
