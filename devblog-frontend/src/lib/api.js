@@ -15,6 +15,12 @@ export async function getPost(slug) {
   return res.json();
 }
 
+export async function getProjects() {
+  const res = await fetch(`${API_BASE}/projects`);
+  if (!res.ok) throw new Error('Failed to fetch projects');
+  return res.json();
+}
+
 export function estimateReadingTime(content) {
   const words = content.trim().split(/\s+/).length;
   const minutes = Math.ceil(words / 200);
