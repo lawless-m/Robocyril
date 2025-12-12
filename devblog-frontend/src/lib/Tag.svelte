@@ -9,11 +9,13 @@
 </script>
 
 {#if isProject && projectId}
-  <a href="/devblog/#/projects/{projectId}" class="tag project-tag">
+  <a href="#/projects/{projectId}" class="tag project-tag">
     {tag}
   </a>
 {:else}
-  <span class="tag">{tag}</span>
+  <a href="#/?tag={encodeURIComponent(tag)}" use:link class="tag regular-tag">
+    {tag}
+  </a>
 {/if}
 
 <style>
@@ -36,5 +38,15 @@
   .project-tag:hover {
     background: var(--accent-hover);
     transform: translateY(-1px);
+  }
+
+  .regular-tag {
+    text-decoration: none;
+    transition: background var(--transition), color var(--transition);
+  }
+
+  .regular-tag:hover {
+    background: var(--accent);
+    color: var(--bg-primary);
   }
 </style>

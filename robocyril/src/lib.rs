@@ -167,6 +167,7 @@ pub fn get_post_by_slug(conn: &Connection, slug: &str) -> Result<Option<Post>> {
 pub struct UpdatePost {
     pub title: Option<String>,
     pub content: Option<String>,
+    pub tags: Option<Vec<String>>,
     pub publish: Option<bool>,
 }
 
@@ -182,6 +183,11 @@ pub fn update_post(conn: &Connection, slug: &str, update: &UpdatePost) -> Result
     if let Some(content) = &update.content {
         sets.push("content = ?");
         params.push(Box::new(content.clone()));
+    }
+    if let Some(tags) = &update.tags {
+        sets.push("tags = ?");
+        let tags_json = serde_json::to_string(tags).unwrap_or_default();
+        params.push(Box::new(tags_json));
     }
     let is_publishing = update.publish == Some(true);
     if is_publishing {

@@ -1,5 +1,5 @@
 <script>
-  import { link } from 'svelte-spa-router';
+  import { link, location, querystring } from 'svelte-spa-router';
   import { getPosts, formatDate, estimateReadingTime } from '../lib/api.js';
   import Skeleton from '../lib/Skeleton.svelte';
   import Tag from '../lib/Tag.svelte';
@@ -7,6 +7,20 @@
   let posts = $state([]);
   let loading = $state(true);
   let error = $state(null);
+
+  // Get the tag query parameter from URL
+  let selectedTag = $derived.by(() => {
+    const params = new URLSearchParams($querystring);
+    return params.get('tag');
+  });
+
+  // Filter posts by tag if one is selected
+  let filteredPosts = $derived.by(() => {
+    if (!selectedTag) return posts;
+    return posts.filter(post =>
+      post.tags && post.tags.includes(selectedTag)
+    );
+  });
 
   $effect(() => {
     loadPosts();
@@ -24,6 +38,12 @@
 </script>
 
 <div class="home">
+  {#if selectedTag}
+    <div class="filter-banner">
+      <span>Showing posts tagged with: <strong>{selectedTag}</strong></span>
+      <a href="#/" use:link class="clear-filter">Clear filter</a>
+    </div>
+  {/if}
 
   {#if loading}
     <div class="posts-list">
@@ -41,14 +61,19 @@
       <p>Couldn't load posts. {error}</p>
       <p class="error-subtext">The workshop is having a moment.</p>
     </div>
-  {:else if posts.length === 0}
+  {:else if filteredPosts.length === 0}
     <div class="empty">
-      <p>No posts yet.</p>
-      <p class="empty-subtext">Check back when I've had something worth complaining about.</p>
+      {#if selectedTag}
+        <p>No posts found with tag "{selectedTag}".</p>
+        <p class="empty-subtext"><a href="#/" use:link>View all posts</a></p>
+      {:else}
+        <p>No posts yet.</p>
+        <p class="empty-subtext">Check back when I've had something worth complaining about.</p>
+      {/if}
     </div>
   {:else}
     <div class="posts-list">
-      {#each posts as post}
+      {#each filteredPosts as post}
         <article class="post-card">
           <a href="/post/{post.slug}" use:link class="post-link">
             <h2 class="post-title">{post.title}</h2>
@@ -163,5 +188,35 @@
     font-size: 0.875rem;
     color: var(--text-muted);
     font-style: italic;
+  }
+
+  .filter-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--accent);
+    border-radius: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+  }
+
+  .filter-banner strong {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .clear-filter {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color var(--transition);
+  }
+
+  .clear-filter:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
   }
 </style>

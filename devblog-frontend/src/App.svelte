@@ -4,6 +4,7 @@
   import Home from './routes/Home.svelte';
   import Post from './routes/Post.svelte';
   import Projects from './routes/Projects.svelte';
+  import Admin from './routes/Admin.svelte';
   import NotFound from './routes/NotFound.svelte';
 
   const routes = {
@@ -11,6 +12,7 @@
     '/post/:slug': Post,
     '/projects': Projects,
     '/projects/:id': Projects,
+    '/admin': Admin,
     '*': NotFound
   };
 </script>
