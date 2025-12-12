@@ -390,8 +390,13 @@ pub fn sync_project_from_post(conn: &Connection, post: &NewPost) -> Result<()> {
 pub fn insert_project(conn: &Connection, project: &NewProject) -> Result<()> {
     let now = Utc::now();
     conn.execute(
-        "INSERT OR REPLACE INTO projects (id, name, repo, description, short_description, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        "INSERT INTO projects (id, name, repo, description, short_description, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+         ON CONFLICT(id) DO UPDATE SET
+            name = excluded.name,
+            repo = excluded.repo,
+            description = excluded.description,
+            short_description = excluded.short_description",
         (
             &project.id,
             &project.name,
@@ -405,8 +410,14 @@ pub fn insert_project(conn: &Connection, project: &NewProject) -> Result<()> {
 }
 
 pub fn list_projects(conn: &Connection) -> Result<Vec<Project>> {
-    let sql = "SELECT id, name, repo, description, short_description, created_at
-               FROM projects ORDER BY created_at ASC";
+    // Order projects by most recent post mention (published_at of posts with matching project tag)
+    let sql = "SELECT DISTINCT p.id, p.name, p.repo, p.description, p.short_description, p.created_at,
+                      COALESCE(MAX(posts.published_at), p.created_at) as last_mentioned
+               FROM projects p
+               LEFT JOIN posts ON posts.published_at IS NOT NULL
+                   AND posts.tags LIKE '%® ' || p.name || '%'
+               GROUP BY p.id, p.name, p.repo, p.description, p.short_description, p.created_at
+               ORDER BY last_mentioned DESC";
 
     let mut stmt = conn.prepare(sql)?;
     let mut rows = stmt.query([])?;

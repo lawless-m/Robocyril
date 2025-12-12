@@ -24,9 +24,6 @@
 </script>
 
 <div class="home">
-  <section class="intro">
-    <p class="tagline">Development updates: what we've built and how to use it.</p>
-  </section>
 
   {#if loading}
     <div class="posts-list">
@@ -63,7 +60,7 @@
             {#if post.tags && post.tags.length > 0}
               <span class="separator">&middot;</span>
               <span class="tags">
-                {#each post.tags.slice(0, 3) as tag}
+                {#each post.tags as tag}
                   <Tag {tag} />
                 {/each}
               </span>

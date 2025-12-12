@@ -83,13 +83,6 @@
           <p class="project-description">
             {selectedId === project.id ? project.description : project.short_description}
           </p>
-          {#if selectedId === project.id}
-            <div class="project-details">
-              <a href={project.repo} target="_blank" rel="noopener noreferrer" class="full-repo-link">
-                {project.repo}
-              </a>
-            </div>
-          {/if}
         </article>
       {/each}
     </div>
@@ -200,19 +193,6 @@
   .project-card.selected .project-description {
     color: var(--text-primary);
     font-size: 1rem;
-  }
-
-  .project-details {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-  }
-
-  .full-repo-link {
-    font-family: 'IBM Plex Mono', 'Fira Code', monospace;
-    font-size: 0.8125rem;
-    color: var(--accent);
-    word-break: break-all;
   }
 
   .empty {

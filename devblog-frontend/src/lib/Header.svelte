@@ -12,11 +12,10 @@
 <header>
   <div class="header-content">
     <a href="/" use:link class="logo">
-      <span class="logo-icon">&#128187;</span>
+      <span class="logo-icon">💻</span>
       <span class="logo-text">Devblog</span>
     </a>
     <nav>
-      <a href="/projects" use:link class="nav-link">Projects</a>
       <button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
         {#if isDark}
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -72,8 +71,9 @@
     color: var(--text-primary);
   }
 
-  .logo-icon {
-    font-size: 1.4rem;
+  .logo-image {
+    height: 2.5rem;
+    width: auto;
   }
 
   nav {
