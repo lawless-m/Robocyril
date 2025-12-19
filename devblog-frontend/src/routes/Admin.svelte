@@ -16,6 +16,12 @@
   let editingTags = $state('');
   let editingProject = $state(null);
 
+  // Full post editor
+  let editingFullPost = $state(null);
+  let editTitle = $state('');
+  let editContent = $state('');
+  let editTagsText = $state('');
+
   async function authenticate() {
     loading = true;
     error = null;
@@ -183,6 +189,58 @@
       loading = false;
     }
   }
+
+  function startEditPost(post) {
+    editingFullPost = post;
+    editTitle = post.title;
+    editContent = post.content;
+    editTagsText = post.tags.join(', ');
+  }
+
+  function cancelEditPost() {
+    editingFullPost = null;
+    editTitle = '';
+    editContent = '';
+    editTagsText = '';
+  }
+
+  async function savePost() {
+    if (!editingFullPost) return;
+
+    loading = true;
+    error = null;
+    success = null;
+    try {
+      const tags = editTagsText.split(',').map(t => t.trim()).filter(t => t);
+
+      const response = await fetch(`/devblog/api/post?slug=${encodeURIComponent(editingFullPost.slug)}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Cyril-Key': apiKey
+        },
+        body: JSON.stringify({
+          title: editTitle,
+          content: editContent,
+          tags: tags,
+          publish: !!editingFullPost.published_at
+        })
+      });
+
+      if (response.ok) {
+        success = 'Post updated successfully';
+        cancelEditPost();
+        await loadData();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        error = data.error || 'Failed to update post';
+      }
+    } catch (e) {
+      error = `Update failed: ${e.message}`;
+    } finally {
+      loading = false;
+    }
+  }
 </script>
 
 <div class="admin-page">
@@ -237,6 +295,52 @@
           Projects ({projects.length})
         </button>
       </div>
+
+      {#if editingFullPost}
+        <div class="modal-overlay" onclick={cancelEditPost}>
+          <div class="modal" onclick={(e) => e.stopPropagation()}>
+            <div class="modal-header">
+              <h2>Edit Post: {editingFullPost.slug}</h2>
+              <button class="close-button" onclick={cancelEditPost}>&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label>Title</label>
+                <input
+                  type="text"
+                  bind:value={editTitle}
+                  placeholder="Post title"
+                  class="form-input"
+                />
+              </div>
+              <div class="form-group">
+                <label>Tags (comma-separated)</label>
+                <input
+                  type="text"
+                  bind:value={editTagsText}
+                  placeholder="rust, svelte, web"
+                  class="form-input"
+                />
+              </div>
+              <div class="form-group">
+                <label>Content (Markdown)</label>
+                <textarea
+                  bind:value={editContent}
+                  placeholder="# Post content here..."
+                  class="form-textarea"
+                  rows="20"
+                ></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-secondary" onclick={cancelEditPost}>Cancel</button>
+              <button class="btn-primary" onclick={savePost} disabled={loading}>
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      {/if}
 
       <div class="tab-content">
         {#if activeTab === 'posts'}
@@ -303,6 +407,13 @@
                     <td>{new Date(post.created_at).toLocaleDateString()}</td>
                     <td class="actions">
                       {#if editingPost?.slug !== post.slug}
+                        <button
+                          class="btn-small"
+                          onclick={() => startEditPost(post)}
+                          disabled={loading}
+                        >
+                          Edit Post
+                        </button>
                         <button
                           class="btn-small"
                           onclick={() => startEditTags(post)}
@@ -664,5 +775,169 @@
   .tag-editor-actions {
     display: flex;
     gap: 0.5rem;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .modal {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    width: 90%;
+    max-width: 900px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  .close-button {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .close-button:hover {
+    color: var(--text-primary);
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-family: inherit;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .form-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-family: 'IBM Plex Mono', monospace;
+    resize: vertical;
+    min-height: 400px;
+  }
+
+  .form-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-primary {
+    padding: 0.75rem 1.5rem;
+    background: var(--accent);
+    color: var(--bg-primary);
+    border: none;
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity var(--transition);
+  }
+
+  .btn-primary:hover {
+    opacity: 0.9;
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    padding: 0.75rem 1.5rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: border-color var(--transition);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
   }
 </style>
